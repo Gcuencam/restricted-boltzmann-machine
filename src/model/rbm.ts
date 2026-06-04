@@ -41,6 +41,33 @@ export class RBM {
     W.dispose();
   }
 
+  /**
+   * P(h=1 | v) = σ(v W + bh)
+   * @param v  [batch, nVisible] — binary visible states
+   * @returns  [batch, nHidden]  — hidden activation probabilities
+   */
+  probHgivenV(v: tf.Tensor2D): tf.Tensor2D {
+    return tf.sigmoid(v.matMul(this.W).add(this.bh)) as tf.Tensor2D;
+  }
+
+  /**
+   * P(v=1 | h) = σ(h Wᵀ + bv)
+   * @param h  [batch, nHidden]  — binary hidden states
+   * @returns  [batch, nVisible] — visible activation probabilities
+   */
+  probVgivenH(h: tf.Tensor2D): tf.Tensor2D {
+    return tf.sigmoid(h.matMul(this.W.transpose()).add(this.bv)) as tf.Tensor2D;
+  }
+
+  /**
+   * Bernoulli sample from a probability matrix.
+   * @param probs  [batch, n] — values in (0, 1)
+   * @returns      [batch, n] — binary 0/1 tensor, same shape
+   */
+  sample(probs: tf.Tensor2D): tf.Tensor2D {
+    return tf.randomUniform(probs.shape as [number, number]).less(probs).cast('float32') as tf.Tensor2D;
+  }
+
   /** Learnable parameters — used by the optimizer */
   get params(): tf.Variable[] {
     return [this.W, this.bv, this.bh];
