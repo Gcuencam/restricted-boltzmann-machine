@@ -1,22 +1,16 @@
-import { generateDataset, ARCHETYPES, DISHES, N_DISHES } from "./data/dataset.js";
+import { RBM } from "./model/rbm.js";
+import { N_DISHES } from "./data/dataset.js";
 
-const dataset = generateDataset({
-  archetypes: ARCHETYPES,
-  usersPerArchetype: 50,
-  noise: 0.05,
-  seed: 42,
-});
+const rbm = new RBM({ nVisible: N_DISHES, nHidden: 3, seed: 42 });
 
-console.log(`Usuarios generados: ${dataset.data.length}`);
-console.log(`Platos por usuario: ${dataset.data[0]?.length}`);
-console.log(`Etiquetas únicas: ${[...new Set(dataset.labels)].sort().join(", ")}`);
+console.log("W shape:", rbm.W.shape);   // [12, 3]
+console.log("bv shape:", rbm.bv.shape); // [12]
+console.log("bh shape:", rbm.bh.shape); // [3]
 
-// Media de activación por plato (debería ser ~0.4-0.6, no 0 ni 1)
-const means = Array.from({ length: N_DISHES }, (_, d) =>
-  dataset.data.reduce((sum, row) => sum + (row[d] ?? 0), 0) / dataset.data.length
-);
-console.log("\nActivación media por plato:");
-DISHES.forEach((dish, i) => {
-  const bar = "█".repeat(Math.round((means[i] ?? 0) * 20));
-  console.log(`  ${dish.padEnd(28)} ${bar} ${(means[i] ?? 0).toFixed(2)}`);
-});
+const wVals = await rbm.W.data();
+const min = Math.min(...wVals).toFixed(4);
+const max = Math.max(...wVals).toFixed(4);
+const limit = (0.1 * Math.sqrt(6 / (N_DISHES + 3))).toFixed(4);
+console.log(`W range: [${min}, ${max}]  (expected ≈ ±${limit})`);
+
+rbm.dispose();
