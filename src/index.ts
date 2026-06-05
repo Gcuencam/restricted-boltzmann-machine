@@ -4,6 +4,8 @@ import { loadNewUsers } from "./data/loader.js";
 import { DISHES, N_DISHES } from "./data/dataset.js";
 
 const nHidden = parseInt(process.argv[2] ?? "3", 10);
+/** "argmax": mayor activación absoluta. "deviation": mayor desviación respecto a la media poblacional. */
+const dominantMethod = (process.argv[3] ?? "argmax") === "deviation" ? "deviation" : "argmax";
 const rbm = loadModel(`data/model-${nHidden}.json`);
 const users = loadNewUsers();
 
@@ -44,12 +46,12 @@ console.log(`  ${"Usuario".padEnd(12)}  ${"Arquetipo".padEnd(12)}  ${hHeaders}  
 const vUsers = tf.tensor2d(users.map(u => u.preferences)) as tf.Tensor2D;
 const pH = await rbm.probHgivenV(vUsers).array() as number[][];
 
-// El factor dominante no es el de mayor activación absoluta, sino el más
-// distintivo: el que más se desvía de su media poblacional.
-// Ejemplo: si Hidden 1 activa ~0.8 para todos, un valor de 1.0 no dice mucho.
-// En cambio, si Hidden 3 tiene media 0.4 y un usuario lo activa a 0.99,
-// eso sí es informativo — ese usuario es especialmente "Hidden 3".
-// Es el mismo principio que un z-score: comparamos contra la escala de cada unidad.
+// Medias por unidad — necesarias para el método "deviation".
+// "deviation": el factor dominante es el que más se desvía de su media poblacional.
+//   Útil cuando una unidad activa alto para casi todos (ej. "anti-cuchara"):
+//   el valor absoluto alto no es informativo, pero la desviación sí lo es.
+//   Es el mismo principio que un z-score.
+// "argmax" (por defecto): simplemente el índice de mayor activación absoluta.
 const means = Array.from({ length: nHidden }, (_, h) =>
   pH.reduce((sum, acts) => sum + acts[h]!, 0) / pH.length
 );
@@ -57,8 +59,10 @@ const means = Array.from({ length: nHidden }, (_, h) =>
 for (let i = 0; i < users.length; i++) {
   const user = users[i]!;
   const acts = pH[i]!;
-  const deviations = acts.map((a, h) => a - means[h]!);
-  const dominant = deviations.indexOf(Math.max(...deviations));
+  const scores = dominantMethod === "deviation"
+    ? acts.map((a, h) => a - means[h]!)
+    : acts;
+  const dominant = scores.indexOf(Math.max(...scores));
   const vals = acts.map(a => a.toFixed(3).padStart(ACT_COL)).join("  ");
   console.log(`  ${user.name.padEnd(12)}  ${user.archetype.padEnd(12)}  ${vals}   → Hidden ${dominant + 1}`);
 }
