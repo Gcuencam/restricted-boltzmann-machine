@@ -25,7 +25,12 @@ const hiddenHeaders = Array.from({ length: rbm.nHidden }, (_, h) => `Hidden ${h 
 console.log("\nThe network learned the following weights:\n");
 console.log(" ".repeat(28) + hiddenHeaders + "   picante?");
 for (let d = 0; d < N_DISHES; d++) {
-  const row = W[d]!.map(v => fmt(v).padStart(COL)).join("  ");
+  // Coloreamos en verde las asociaciones fuertes (peso ≥ 1). El padding se aplica
+  // ANTES del color para que los códigos ANSI no descuadren las columnas.
+  const row = W[d]!.map(v => {
+    const cell = fmt(v).padStart(COL);
+    return v >= 1 ? chalk.green(cell) : cell;
+  }).join("  ");
   console.log(DISHES[d]!.padEnd(28) + row + (DISH_SPICY[d] ? "      🌶️" : ""));
 }
 
