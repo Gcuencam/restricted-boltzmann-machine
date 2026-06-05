@@ -23,6 +23,27 @@ export interface TrainConfig {
    * Valores típicos: 16–64. Con datasets pequeños (<500 usuarios) probar con 16 o 32.
    */
   batchSize?: number;
+  /**
+   * Weight decay L2: penaliza pesos grandes (W += lr·(ΔW − weightDecay·W)).
+   * Mantiene los filtros pequeños y limpios y evita que unas pocas conexiones
+   * dominen. Valores típicos: 1e-4 – 1e-3.
+   */
+  weightDecay?: number;
+  /**
+   * Weight decay aplicado a los BIAS ocultos bh. A diferencia del weight decay
+   * normal (que solo toca W), este frena el crecimiento de los bias que crean
+   * unidades "encendidas por defecto" (bias alto → saturación). Útil para que
+   * cada unidad refleje su evidencia de pesos y no un baseline arbitrario.
+   */
+  hiddenBiasDecay?: number;
+  /**
+   * Penalización de dispersión (sparsity). Empuja la activación media de cada
+   * unidad oculta hacia `target` con fuerza `cost`. Al forzar que cada unidad se
+   * encienda para POCOS usuarios, deja de haber unidades "encendidas por defecto"
+   * (bias alto) y cada una tiende a especializarse en un factor — aquí, una cocina.
+   * Valores típicos: target 0.05–0.2, cost 0.1–1.0. (Hinton 2010, §10.)
+   */
+  sparsity?: { target: number; cost: number };
 }
 
 /**
@@ -57,9 +78,28 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
       tf.tidy(() => {
         const vBatch = tf.tensor2d(batchData) as tf.Tensor2D;
         const { dW, dbv, dbh } = rbm.cd1(vBatch);
-        rbm.W.assign(rbm.W.add(dW.mul(config.learningRate)));
+
+        // Weight decay L2: resta una fracción del propio W al gradiente.
+        const dWreg = config.weightDecay
+          ? dW.sub(rbm.W.mul(config.weightDecay))
+          : dW;
+
+        // Sparsity: empuja la activación media de cada unidad hacia el target.
+        // q = media por unidad de P(h=1 | vBatch); el gradiente (target − q)
+        // baja el bias de las unidades que se activan de más.
+        let dbhReg = dbh;
+        if (config.sparsity) {
+          const q = rbm.probHgivenV(vBatch).mean(0) as tf.Tensor1D;
+          const grad = tf.scalar(config.sparsity.target).sub(q).mul(config.sparsity.cost);
+          dbhReg = dbhReg.add(grad) as tf.Tensor1D;
+        }
+        if (config.hiddenBiasDecay) {
+          dbhReg = dbhReg.sub(rbm.bh.mul(config.hiddenBiasDecay)) as tf.Tensor1D;
+        }
+
+        rbm.W.assign(rbm.W.add(dWreg.mul(config.learningRate)));
         rbm.bv.assign(rbm.bv.add(dbv.mul(config.learningRate)));
-        rbm.bh.assign(rbm.bh.add(dbh.mul(config.learningRate)));
+        rbm.bh.assign(rbm.bh.add(dbhReg.mul(config.learningRate)));
       });
     }
 

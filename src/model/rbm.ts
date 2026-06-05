@@ -20,9 +20,16 @@ export class RBM {
   bv: tf.Variable<tf.Rank.R1>;
   bh: tf.Variable<tf.Rank.R1>;
 
+  // Semilla incremental para el muestreo Bernoulli. Hace el entrenamiento
+  // totalmente determinista (mismos pesos en cada corrida) en lugar de depender
+  // del PRNG global de TensorFlow.
+  private sampleSeed: number;
+  private sampleCount = 0;
+
   constructor(config: RBMConfig) {
     this.nVisible = config.nVisible;
     this.nHidden = config.nHidden;
+    this.sampleSeed = config.seed ?? Math.floor(Math.random() * 1e9);
 
     // Xavier/Glorot uniform init scaled by 0.1 — keeps gradients well-conditioned at the start of training (Glorot & Bengio, 2010).
     const limit = 0.1 * Math.sqrt(6 / (config.nVisible + config.nHidden));
@@ -65,7 +72,9 @@ export class RBM {
    * @returns      [batch, n] — binary 0/1 tensor, same shape
    */
   sample(probs: tf.Tensor2D): tf.Tensor2D {
-    return tf.randomUniform(probs.shape as [number, number]).less(probs).cast('float32') as tf.Tensor2D;
+    const seed = this.sampleSeed + this.sampleCount++;
+    return tf.randomUniform(probs.shape as [number, number], 0, 1, "float32", seed)
+      .less(probs).cast('float32') as tf.Tensor2D;
   }
 
   /** Learnable parameters — used by the optimizer */

@@ -46,13 +46,13 @@ const NEW_USERS: { name: string; cuisine: Cuisine; spicy: boolean }[] = [
   { name: "Jesús",   cuisine: "asiatico", spicy: true  },
 ];
 
-const rng = mulberry32(4547);
+const rng = mulberry32(22);
 
 const newUserRecords = NEW_USERS.map(({ name, cuisine, spicy }) => ({
   name,
   cuisine,
   spicy,
-  preferences: generateUser({ cuisine, spicy }, 0.03, rng),
+  preferences: generateUser({ cuisine, spicy }, 0, rng),
 }));
 
 writeFileSync(
