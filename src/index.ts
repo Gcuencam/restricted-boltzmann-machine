@@ -1,7 +1,14 @@
 import * as tf from "@tensorflow/tfjs-node";
+import chalk from "chalk";
 import { loadModel } from "./model/persistence.js";
 import { loadNewUsers, loadTrainDataset } from "./data/loader.js";
 import { DISHES, N_DISHES, DISH_SPICY, CUISINES } from "./data/dataset.js";
+
+/** Color por intensidad de activación: verde ≥0.9, amarillo ≥0.75, naranja ≥0.5. */
+const colorByActivation = (a: number, text: string): string =>
+  a >= 0.9 ? chalk.green(text)
+  : a >= 0.75 ? chalk.yellow(text)
+  : chalk.hex("#FFA500")(text); // naranja (0.5 ≤ a < 0.75)
 
 const nHidden = parseInt(process.argv[2] ?? "6", 10);
 const rbm = loadModel(`data/model-${nHidden}.json`);
@@ -73,9 +80,6 @@ console.log(
   [...unitToCuisine].sort((a, b) => a[0] - b[0]).map(([u, c]) => `Hidden ${u + 1}=${c}`).join("  ")
 );
 
-/** Etiqueta legible de cada unidad: cocina descubierta, "picante", o "—" si es redundante. */
-const unitLabel = (h: number): string =>
-  h === spicyUnit ? "picante" : (unitToCuisine.get(h) ?? "—");
 
 // ── 2. Preferencias de usuarios (platos × usuarios) ───────────────────────────
 
@@ -97,31 +101,29 @@ const hHeaders = Array.from({ length: nHidden }, (_, h) =>
 
 console.log("\n\nActivación oculta de usuarios nuevos  P(h=1 | usuario):");
 console.log(`(* = unidad del picante, Hidden ${spicyUnit + 1})\n`);
-console.log(`  ${"Usuario".padEnd(10)}  ${"Cocina".padEnd(10)}  ${"picante".padEnd(8)}  ${hHeaders}   → 2 factores más activos`);
+console.log(`  ${"Usuario".padEnd(10)}  ${"Cocina".padEnd(10)}  ${"picante".padEnd(8)}  ${hHeaders}   → Factores más activos`);
 
 const vUsers = tf.tensor2d(users.map(u => u.preferences)) as tf.Tensor2D;
 const pH = await rbm.probHgivenV(vUsers).array() as number[][];
 
-// Última columna: las DOS unidades más activas, etiquetadas. Revela que un comensal
-// expresa varios factores a la vez — p.ej. los picantes encienden su cocina Y la
-// unidad del picante (Jesús: asiatico H4 + picante H6).
+// Última columna: TODAS las unidades activas (P > 0.5) de cada comensal, ordenadas
+// de mayor a menor y coloreadas por intensidad (verde ≥0.9, amarillo ≥0.75, naranja
+// ≥0.5). Revela que un comensal expresa varios factores a la vez — p.ej. los
+// picantes encienden su cocina Y la unidad del picante (H6).
 for (let i = 0; i < users.length; i++) {
   const user = users[i]!;
   const acts = pH[i]!;
-  const top2 = acts
+  const factores = acts
     .map((a, h) => ({ a, h }))
+    .filter(({ a }) => a >= 0.5)
     .sort((x, y) => y.a - x.a)
-    .slice(0, 2)
-    .map(({ a, h }) => {
-      const l = unitLabel(h);
-      return `${l === "—" ? "" : l}(H${h + 1}, ${a.toFixed(2)})`;
-    })
-    .join("  +  ");
+    .map(({ a, h }) => colorByActivation(a, `H${h + 1}`))
+    .join(" ");
   const vals = acts.map((a, h) =>
     (h === spicyUnit ? "*" + a.toFixed(3) : a.toFixed(3)).padStart(ACT_COL)
   ).join("  ");
   const spicyTag = user.spicy ? "Sí" : "no";
-  console.log(`  ${user.name.padEnd(10)}  ${user.cuisine.padEnd(10)}  ${spicyTag.padEnd(8)}  ${vals}   → ${top2}`);
+  console.log(`  ${user.name.padEnd(10)}  ${user.cuisine.padEnd(10)}  ${spicyTag.padEnd(8)}  ${vals}   → ${factores || "—"}`);
 }
 
 tf.dispose([vUsers]);

@@ -23,18 +23,47 @@ control para demostrar que el picante es un eje ortogonal y no "una cocina más"
 
 ## Cómo reproducirlo
 
-```bash
-npm run generate                  # genera data/train.json (240 usuarios) y data/new-users.json (10)
-npm run train                     # entrena: nHidden=6, 500 epochs, lr=0.1, batch=32, seed=42, hbDecay=0.02
-npm run dev                       # inferencia + tablas (nHidden=6)
-```
-
-Equivalentes con argumentos explícitos (orden: `nHidden epochs lr batch seed hiddenBiasDecay`):
+Los tres pasos, en orden. Cada comando se muestra con **todos sus parámetros
+explícitos** (coinciden con los valores por defecto del código):
 
 ```bash
+# 1. Generar los datos sintéticos (deterministas: seeds fijadas en el código)
+npm run generate
+#    → data/train.json      240 usuarios (4 cocinas × 60), seed 42, ruido 0.03
+#    → data/new-users.json  10 usuarios de demostración,   seed 22, ruido 0
+
+# 2. Entrenar la RBM
 npx tsx src/train.ts 6 500 0.1 32 42 0.02
+#                    │ │   │   │  │  └─ hiddenBiasDecay : decaimiento de los bias ocultos
+#                    │ │   │   │  └──── seed            : semilla (init + barajado + muestreo CD-1)
+#                    │ │   │   └─────── batchSize       : tamaño de mini-batch
+#                    │ │   └─────────── learningRate    : tasa de aprendizaje
+#                    │ └─────────────── epochs          : número de epochs
+#                    └───────────────── nHidden         : nº de unidades ocultas
+#    (equivale a `npm run train`, que usa exactamente estos defaults)
+
+# 3. Inferencia + tablas (matriz W, preferencias, activaciones ocultas)
 npx tsx src/index.ts 6
+#                    └─ nHidden : debe coincidir con el modelo entrenado (carga data/model-6.json)
+#    (equivale a `npm run dev`)
 ```
+
+### Parámetros de `train` (posicionales)
+
+| Pos | Parámetro         | Default | Qué hace |
+|-----|-------------------|---------|----------|
+| 1   | `nHidden`         | `6`     | Unidades ocultas. ≥5 para 4 cocinas + picante. |
+| 2   | `epochs`          | `500`   | Pasadas por el dataset. |
+| 3   | `learningRate`    | `0.1`   | Tasa de aprendizaje de CD-1. |
+| 4   | `batchSize`       | `32`    | Tamaño de mini-batch (SGD). |
+| 5   | `seed`            | `42`    | Semilla global → entrenamiento determinista. |
+| 6   | `hiddenBiasDecay` | `0.02`  | Decae los bias ocultos para desenredar las cocinas (ver §5). |
+
+### Parámetros de `index` / `dev` (posicionales)
+
+| Pos | Parámetro | Default | Qué hace |
+|-----|-----------|---------|----------|
+| 1   | `nHidden` | `6`     | Carga `data/model-${nHidden}.json` y dimensiona las tablas. |
 
 El entrenamiento es **totalmente determinista** (init, barajado y muestreo de CD-1
 sembrados): dos corridas producen pesos idénticos (mismo md5). Reproducible para el
@@ -92,15 +121,19 @@ pide Lentejas, Kimchi… Demuestra que el picante es verdaderamente transversal 
 un subproducto de ninguna cocina concreta. Es el caso más difícil y la red lo
 resuelve bien.
 
-### 4. Dos factores a la vez
-La última columna de la tabla muestra las dos unidades más activas de cada cliente.
-Los amantes del picante encienden **su cocina Y el picante** simultáneamente:
+### 4. Varios factores a la vez
+La última columna ("Factores más activos") lista **todas** las unidades que se
+encienden (P > 0.5) en cada cliente, ordenadas de mayor a menor y coloreadas en
+terminal por intensidad: 🟢 verde ≥0.90, 🟡 amarillo ≥0.75, 🟠 naranja ≥0.50.
+Recordatorio del mapa: H1=cuchara, H3=mexicano, H4=asiatico, H5=italiano, H6=picante.
+
+Los amantes del picante encienden **su cocina Y el picante** a la vez:
 
 ```
-Jesús   asiatico  Sí  → asiatico(H4, 1.00)  +  picante(H6, 1.00)
-Laura   asiatico  Sí  → asiatico(H4, 1.00)  +  picante(H6, 1.00)
-Maria   mexicano  Sí  → mexicano(H3, 1.00)  +  picante(H6, 1.00)
-Ramón   cuchara   Sí  → cuchara(H1, 1.00)   +  picante(H6, 0.67)
+Maria   mexicano  Sí  → H3 H6        (mexicano + picante)
+Laura   asiatico  Sí  → H4 H6 H1     (asiatico + picante + …)
+Jesús   asiatico  Sí  → H4 H6 H1     (asiatico + picante + …)
+Ramón   cuchara   Sí  → H1 H3 H6     (cuchara + … + picante)
 ```
 
 Un cliente no es "una cosa": es una **combinación** de factores latentes. Para
