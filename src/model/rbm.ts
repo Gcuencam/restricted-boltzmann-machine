@@ -76,10 +76,16 @@ export class RBM {
   /**
    * Contrastive Divergence 1 — computes parameter gradients for one batch.
    *
-   * Chain: v⁰ → ph0 → h0 → pv1 → v1 → ph1
-   * ΔW   = (v⁰ᵀ ph0  −  v¹ᵀ ph1) / batch
-   * Δbv  = mean(v⁰ − v¹,  axis=0)
+   * Chain: v⁰ → ph0 → h0 → pv1 → ph1
+   * ΔW   = (v⁰ᵀ ph0  −  pv1ᵀ ph1) / batch
+   * Δbv  = mean(v⁰ − pv1,  axis=0)
    * Δbh  = mean(ph0 − ph1, axis=0)
+   *
+   * Se muestrea SOLO la capa oculta (h0): actúa de cuello de botella binario que
+   * obliga a la red a comprimir. Para la reconstrucción visible se usan las
+   * probabilidades (pv1) en lugar de un muestreo, lo que reduce el ruido del
+   * gradiente y produce filtros más nítidos — práctica recomendada por Hinton
+   * (A Practical Guide to Training RBMs, 2010, §3).
    */
   cd1(v0: tf.Tensor2D): { dW: tf.Tensor2D; dbv: tf.Tensor1D; dbh: tf.Tensor1D } {
     return tf.tidy(() => {
@@ -88,16 +94,15 @@ export class RBM {
       const ph0 = this.probHgivenV(v0);
       const h0  = this.sample(ph0);
       const pv1 = this.probVgivenH(h0);
-      const v1  = this.sample(pv1);
-      const ph1 = this.probHgivenV(v1);
+      const ph1 = this.probHgivenV(pv1);
 
-      // (v0ᵀ @ ph0 − v1ᵀ @ ph1) / batch  →  [nVisible, nHidden]
+      // (v0ᵀ @ ph0 − pv1ᵀ @ ph1) / batch  →  [nVisible, nHidden]
       const dW  = v0.transpose().matMul(ph0)
-                    .sub(v1.transpose().matMul(ph1))
+                    .sub(pv1.transpose().matMul(ph1))
                     .div(batchSize) as tf.Tensor2D;
 
-      // mean(v0 − v1, axis=0)  →  [nVisible]
-      const dbv = v0.sub(v1).mean(0) as tf.Tensor1D;
+      // mean(v0 − pv1, axis=0)  →  [nVisible]
+      const dbv = v0.sub(pv1).mean(0) as tf.Tensor1D;
 
       // mean(ph0 − ph1, axis=0)  →  [nHidden]
       const dbh = ph0.sub(ph1).mean(0) as tf.Tensor1D;

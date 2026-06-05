@@ -1,9 +1,15 @@
 import * as tf from "@tensorflow/tfjs-node";
 import type { RBM } from "./rbm.js";
+import { mulberry32 } from "../data/dataset.js";
 
 export interface TrainConfig {
   epochs: number;
   learningRate: number;
+  /**
+   * Semilla para el barajado de los mini-batches. Fijarla hace el entrenamiento
+   * reproducible epoch a epoch (importante para un experimento publicable).
+   */
+  seed?: number;
   /**
    * Mini-batch size for stochastic gradient descent.
    *
@@ -30,12 +36,15 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
   const effectiveBatchSize = config.batchSize ?? nSamples;
   const vAll = tf.tensor2d(data) as tf.Tensor2D;
 
+  // RNG sembrado para que el barajado sea idéntico en cada corrida.
+  const rng = config.seed !== undefined ? mulberry32(config.seed) : Math.random;
+
   for (let epoch = 0; epoch < config.epochs; epoch++) {
     // Mezclamos los índices cada epoch para que los mini-batches vean
     // combinaciones distintas y el modelo no memorice el orden de los datos.
     const indices = Array.from({ length: nSamples }, (_, i) => i);
     for (let i = nSamples - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rng() * (i + 1));
       [indices[i], indices[j]] = [indices[j]!, indices[i]!];
     }
 
@@ -56,9 +65,11 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
 
     // El error se calcula siempre sobre el dataset COMPLETO para que la métrica
     // sea comparable entre epochs independientemente del tamaño de batch.
+    // Usamos las probabilidades (mean-field, sin muestreo) para que la curva sea
+    // suave y reproducible en lugar de ruidosa.
     const error = tf.tidy(() => {
       const ph0 = rbm.probHgivenV(vAll);
-      const pv1 = rbm.probVgivenH(rbm.sample(ph0));
+      const pv1 = rbm.probVgivenH(ph0);
       return vAll.sub(pv1).square().mean().arraySync() as number;
     });
 

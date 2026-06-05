@@ -1,142 +1,131 @@
 [
   {
     "name": "Arancha",
-    "archetype": "mexicano",
+    "cuisine": "mexicano",
+    "spicy": false,
     "preferences": [
-      1,
-      1,
-      1,
+      0,
       1,
       0,
       1,
       0,
+      0,
+      1,
       0,
       0,
       0,
       0,
       0
-    ]
-  },
-  {
-    "name": "Jose",
-    "archetype": "picante",
-    "preferences": [
-      0,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0
-    ]
-  },
-  {
-    "name": "Juan",
-    "archetype": "cuchara",
-    "preferences": [
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      1,
-      0,
-      1,
-      1
-    ]
-  },
-  {
-    "name": "Jesús",
-    "archetype": "picante",
-    "preferences": [
-      0,
-      1,
-      0,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      0,
-      0
-    ]
-  },
-  {
-    "name": "Antoni",
-    "archetype": "italiano",
-    "preferences": [
-      0,
-      0,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ]
-  },
-  {
-    "name": "Elena",
-    "archetype": "asiatico",
-    "preferences": [
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-      1
     ]
   },
   {
     "name": "Maria",
-    "archetype": "mexicano",
+    "cuisine": "mexicano",
+    "spicy": true,
     "preferences": [
-      0,
+      1,
+      1,
       1,
       0,
       0,
       0,
       0,
-      0,
       1,
-      0,
-      0,
+      1,
+      1,
       0,
       1
     ]
   },
   {
-    "name": "Ramón",
-    "archetype": "cuchara",
+    "name": "Antoni",
+    "cuisine": "italiano",
+    "spicy": false,
     "preferences": [
       0,
       0,
       0,
       1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "Marta",
+    "cuisine": "italiano",
+    "spicy": true,
+    "preferences": [
       0,
       0,
       1,
       1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "name": "Juan",
+    "cuisine": "cuchara",
+    "spicy": false,
+    "preferences": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "Ramón",
+    "cuisine": "cuchara",
+    "spicy": true,
+    "preferences": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "name": "Elena",
+    "cuisine": "asiatico",
+    "spicy": false,
+    "preferences": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       1,
       0,
       1,
@@ -145,11 +134,50 @@
   },
   {
     "name": "Laura",
-    "archetype": "asiatico",
+    "cuisine": "asiatico",
+    "spicy": true,
     "preferences": [
       0,
       0,
+      1,
       0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "name": "Jose",
+    "cuisine": "mexicano",
+    "spicy": true,
+    "preferences": [
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "name": "Jesús",
+    "cuisine": "asiatico",
+    "spicy": true,
+    "preferences": [
+      0,
+      0,
+      1,
       0,
       0,
       0,
@@ -159,24 +187,6 @@
       1,
       1,
       1
-    ]
-  },
-  {
-    "name": "Marta",
-    "archetype": "italiano",
-    "preferences": [
-      1,
-      0,
-      0,
-      1,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0
     ]
   }
 ]
