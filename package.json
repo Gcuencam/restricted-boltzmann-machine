@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "train": "tsx src/train.ts",
     "generate": "tsx src/data/generate.ts",
     "test": "vitest"
   },
