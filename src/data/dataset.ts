@@ -1,16 +1,16 @@
 export const DISHES = [
   "Tacos al pastor",
-  "Boquerones rebozados",
+  "Quesadillas",
+  "Totopos con jalapeños",
+  "Rigatoni Carbonara",
+  "Lasaña",
+  "Risotto",
   "Fabada Asturiana",
   "Lentejas con chorizo picante",
-  "Quesadillas",
-  "Totopos",
-  "Salmón al horno",
-  "Garbanzos con arroz",
-  "Aguachile",
   "Sopas de ajo",
-  "Lenguado a la plancha",
   "Kimchi Chigae",
+  "Sushi",
+  "Pad Thai",
 ] as const;
 
 export const N_DISHES = DISHES.length; // 12
@@ -36,22 +36,34 @@ export interface Dataset {
   labels: number[];
 }
 
+// Orden de platos: Tacos, Quesadillas, Totopos, Rigatoni, Lasaña, Risotto,
+//                  Fabada, Lentejas, Sopas, Kimchi, Sushi, Pad Thai
+//
+// Ejes transversales deliberados:
+//   Totopos con jalapeños  → mexicano (0.8) + picante (0.9)
+//   Lentejas con chorizo   → cuchara  (0.8) + picante (0.8)
+//   Kimchi Chigae          → asiático (0.8) + picante (0.8)
+//   Sopas de ajo           → cuchara  (0.9) + picante (0.6, lleva guindilla)
 export const ARCHETYPES: Archetype[] = [
   {
-    name: "pescado",
-    dishProbs: [0.3, 0.8, 0.2, 0.3, 0.2, 0.3, 0.9, 0.2, 0.6, 0.3, 0.9, 0.2],
+    name: "mexicano",
+    dishProbs: [0.9, 0.9, 0.8, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
   },
   {
-    name: "mexicana",
-    dishProbs: [0.9, 0.1, 0.1, 0.1, 0.9, 0.9, 0.1, 0.1, 0.8, 0.1, 0.1, 0.2],
+    name: "italiano",
+    dishProbs: [0.1, 0.1, 0.1, 0.9, 0.9, 0.9, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
   },
   {
     name: "cuchara",
-    dishProbs: [0.1, 0.2, 0.9, 0.7, 0.1, 0.1, 0.2, 0.8, 0.1, 0.8, 0.2, 0.6],
+    dishProbs: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.9, 0.8, 0.9, 0.3, 0.1, 0.1],
+  },
+  {
+    name: "asiatico",
+    dishProbs: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.8, 0.9, 0.9],
   },
   {
     name: "picante",
-    dishProbs: [0.6, 0.1, 0.1, 0.9, 0.5, 0.6, 0.1, 0.2, 0.9, 0.2, 0.1, 0.9],
+    dishProbs: [0.5, 0.3, 0.9, 0.1, 0.1, 0.1, 0.1, 0.8, 0.6, 0.8, 0.2, 0.3],
   },
 ];
 

@@ -30,16 +30,16 @@ console.log(`✓ data/train.json — ${trainRecords.length} usuarios`);
 // ── New users: 10 usuarios nombrados ─────────────────────────────────────────
 
 const NEW_USERS: { name: string; archetype: string }[] = [
-  { name: "Arancha", archetype: "pescado" },
-  { name: "Jose",    archetype: "mexicana" },
-  { name: "Juan",    archetype: "cuchara" },
-  { name: "Jesús",   archetype: "picante" },
-  { name: "Antoni",  archetype: "cuchara" },
-  { name: "Elena",   archetype: "pescado" },
-  { name: "Maria",   archetype: "mexicana" },
-  { name: "Ramón",   archetype: "cuchara" },
-  { name: "Laura",   archetype: "picante" },
-  { name: "Marta",   archetype: "mexicana" },
+  { name: "Arancha", archetype: "mexicano" },
+  { name: "Jose",    archetype: "picante"  },
+  { name: "Juan",    archetype: "cuchara"  },
+  { name: "Jesús",   archetype: "picante"  },
+  { name: "Antoni",  archetype: "italiano" },
+  { name: "Elena",   archetype: "asiatico" },
+  { name: "Maria",   archetype: "mexicano" },
+  { name: "Ramón",   archetype: "cuchara"  },
+  { name: "Laura",   archetype: "asiatico" },
+  { name: "Marta",   archetype: "italiano" },
 ];
 
 const rng = mulberry32(99);

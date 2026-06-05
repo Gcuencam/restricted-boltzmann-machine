@@ -1,7 +1,7 @@
 [
   {
     "name": "Arancha",
-    "archetype": "pescado",
+    "archetype": "mexicano",
     "preferences": [
       1,
       1,
@@ -9,28 +9,28 @@
       1,
       0,
       1,
-      1,
       0,
-      1,
       0,
-      1,
+      0,
+      0,
+      0,
       0
     ]
   },
   {
     "name": "Jose",
-    "archetype": "mexicana",
+    "archetype": "picante",
     "preferences": [
       0,
-      0,
-      0,
-      0,
       1,
       1,
       0,
       0,
-      1,
       0,
+      0,
+      0,
+      0,
+      1,
       0,
       0
     ]
@@ -41,14 +41,14 @@
     "preferences": [
       1,
       0,
-      1,
-      0,
-      0,
       0,
       0,
       0,
       0,
       1,
+      0,
+      1,
+      0,
       1,
       1
     ]
@@ -57,41 +57,41 @@
     "name": "Jesús",
     "archetype": "picante",
     "preferences": [
-      1,
-      1,
       0,
       1,
       0,
       0,
       0,
+      1,
       0,
+      1,
       1,
       0,
       0,
-      1
+      0
     ]
   },
   {
     "name": "Antoni",
-    "archetype": "cuchara",
+    "archetype": "italiano",
     "preferences": [
       0,
       0,
       1,
       1,
-      0,
       1,
       0,
-      1,
       0,
-      1,
+      0,
+      0,
+      0,
       0,
       0
     ]
   },
   {
     "name": "Elena",
-    "archetype": "pescado",
+    "archetype": "asiatico",
     "preferences": [
       0,
       1,
@@ -101,25 +101,25 @@
       0,
       0,
       0,
-      1,
       0,
       1,
-      0
+      1,
+      1
     ]
   },
   {
     "name": "Maria",
-    "archetype": "mexicana",
+    "archetype": "mexicano",
     "preferences": [
       0,
-      0,
+      1,
       0,
       0,
       0,
       0,
       0,
       1,
-      1,
+      0,
       0,
       0,
       1
@@ -135,45 +135,45 @@
       1,
       0,
       0,
-      0,
+      1,
+      1,
       1,
       0,
-      1,
       1,
       0
     ]
   },
   {
     "name": "Laura",
-    "archetype": "picante",
+    "archetype": "asiatico",
     "preferences": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       1,
-      0,
-      0,
       1,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
       1
     ]
   },
   {
     "name": "Marta",
-    "archetype": "mexicana",
+    "archetype": "italiano",
     "preferences": [
       1,
       0,
       0,
+      1,
+      1,
+      1,
+      1,
       0,
-      1,
-      1,
-      1,
       0,
-      1,
       0,
       0,
       0

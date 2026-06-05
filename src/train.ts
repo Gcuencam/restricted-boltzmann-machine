@@ -8,12 +8,13 @@ const nHidden      = parseInt(process.argv[2] ?? "3",    10);
 const epochs       = parseInt(process.argv[3] ?? "500",   10);
 const learningRate = parseFloat(process.argv[4] ?? "0.1");
 const batchSize    = process.argv[5] ? parseInt(process.argv[5], 10) : undefined;
+const seed         = process.argv[6] ? parseInt(process.argv[6], 10) : 42;
 
 const dataset = loadTrainDataset();
-const rbm = new RBM({ nVisible: N_DISHES, nHidden, seed: 42 });
+const rbm = new RBM({ nVisible: N_DISHES, nHidden, seed });
 
 const batchLabel = batchSize ? `batch=${batchSize}` : "batch=full";
-console.log(`Entrenando — hidden: ${nHidden}  epochs: ${epochs}  lr: ${learningRate}  ${batchLabel}\n`);
+console.log(`Entrenando — hidden: ${nHidden}  epochs: ${epochs}  lr: ${learningRate}  ${batchLabel}  seed: ${seed}\n`);
 train(rbm, dataset.data, { epochs, learningRate, batchSize });
 
 await saveModel(rbm, `data/model-${nHidden}.json`);
