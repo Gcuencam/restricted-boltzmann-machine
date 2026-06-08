@@ -16,22 +16,22 @@ export const DISHES = [
 export const N_DISHES = DISHES.length; // 12
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Modelo generador: cada usuario tiene DOS rasgos latentes independientes
+// Generative model: each user has TWO independent latent traits
 //
-//   1. cocina  ∈ {mexicano, italiano, cuchara, asiatico}   (one-hot)
-//   2. picante ∈ {sí, no}                                  (moneda independiente)
+//   1. cuisine  ∈ {mexicano, italiano, cuchara, asiatico}   (one-hot)
+//   2. spicy    ∈ {yes, no}                                  (independent coin flip)
 //
-// El picante es DELIBERADAMENTE transversal: un amante del picante eleva su
-// probabilidad en TODOS los platos picantes, sin importar de qué cocina sean.
-// Por eso no "se ve" en los clústeres de cocina y la RBM tiene que redescubrirlo
-// como un factor latente propio. La cocina italiana no tiene plato picante: actúa
-// como control ortogonal que demuestra que el picante no es un eje culinario más.
+// Spicy is DELIBERATELY cross-cutting: a spicy lover raises their probability on
+// ALL spicy dishes, regardless of which cuisine they belong to. That is why it
+// does not "show up" in cuisine clusters and the RBM must rediscover it as its
+// own latent factor. Italian cuisine has no spicy dish: it acts as an orthogonal
+// control that demonstrates that spicy is not just another cuisine axis.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type Cuisine = "mexicano" | "italiano" | "cuchara" | "asiatico";
 export const CUISINES: Cuisine[] = ["mexicano", "italiano", "cuchara", "asiatico"];
 
-/** Cocina a la que pertenece cada plato (alineado por índice con DISHES). */
+/** Cuisine each dish belongs to (index-aligned with DISHES). */
 export const DISH_CUISINE: Cuisine[] = [
   "mexicano", "mexicano", "mexicano", // Tacos, Quesadillas, Totopos
   "italiano", "italiano", "italiano", // Rigatoni, Lasaña, Risotto
@@ -39,31 +39,31 @@ export const DISH_CUISINE: Cuisine[] = [
   "asiatico", "asiatico", "asiatico", // Kimchi, Sushi, Pad Thai
 ];
 
-/** Plato picante: el rasgo transversal que la RBM debe descubrir. */
+/** Spicy dish: the cross-cutting trait the RBM must discover. */
 export const DISH_SPICY: boolean[] = [
-  false, false, true,  // Tacos no, Quesadillas no, Totopos con jalapeños SÍ
-  false, false, false, // italianos: ninguno (cocina de control)
-  false, true,  false, // Fabada no, Lentejas con chorizo picante SÍ, Sopas no
-  true,  false, true,  // Kimchi SÍ, Sushi no, Pad Thai SÍ
+  false, false, true,  // Tacos no, Quesadillas no, Totopos con jalapeños YES
+  false, false, false, // Italian: none (control cuisine)
+  false, true,  false, // Fabada no, Lentejas con chorizo picante YES, Sopas no
+  true,  false, true,  // Kimchi YES, Sushi no, Pad Thai YES
 ];
 
 /** Índices de los platos picantes — útil para inspección/visualización. */
 export const SPICY_DISHES = DISH_SPICY.flatMap((s, d) => (s ? [d] : []));
 
 /**
- * Parámetros del generador. Separar estas probabilidades hace explícito el
- * supuesto del experimento y permite afinar la nitidez de la señal.
+ * Generator parameters. Separating these probabilities makes the experiment's
+ * assumptions explicit and allows fine-tuning the signal clarity.
  */
 export interface GenProbs {
-  /** Plato (no picante) de tu propia cocina. */
+  /** Non-spicy dish from your own cuisine. */
   ownMild: number;
-  /** Plato picante de tu cocina y te gusta el picante. */
+  /** Spicy dish from your cuisine and you like spicy food. */
   ownSpicyLover: number;
-  /** Plato picante de tu cocina pero NO te gusta el picante. */
+  /** Spicy dish from your cuisine but you do NOT like spicy food. */
   ownSpicyAvoid: number;
-  /** Plato picante de OTRA cocina y te gusta el picante (el cruce transversal). */
+  /** Spicy dish from ANOTHER cuisine and you like spicy food (the cross-cutting overlap). */
   crossSpicyLover: number;
-  /** Cualquier otro plato (otra cocina, no picante / picante sin afición). */
+  /** Any other dish (another cuisine, non-spicy / spicy without interest). */
   base: number;
 }
 
@@ -82,9 +82,9 @@ export interface UserProfile {
 
 export interface DatasetConfig {
   usersPerCuisine: number;
-  /** Probabilidad de que un usuario sea amante del picante. */
+  /** Probability that a user is a spicy lover. */
   spicyProb: number;
-  /** Probabilidad de voltear cada bit tras el muestreo. */
+  /** Probability of flipping each bit after sampling. */
   noise: number;
   seed?: number;
   probs?: GenProbs;
@@ -93,20 +93,20 @@ export interface DatasetConfig {
 export interface DatasetRecord {
   cuisine: Cuisine;
   spicy: boolean;
-  /** Vector binario [N_DISHES]. */
+  /** Binary vector [N_DISHES]. */
   preferences: number[];
 }
 
 export interface Dataset {
-  /** Matriz binaria [nUsers, N_DISHES]. */
+  /** Binary matrix [nUsers, N_DISHES]. */
   data: number[][];
-  /** Índice de cocina que generó cada usuario. */
+  /** Cuisine index that generated each user. */
   cuisineLabels: number[];
-  /** Rasgo picante de cada usuario (ground truth oculto). */
+  /** Spicy trait of each user (hidden ground truth). */
   spicyLabels: boolean[];
 }
 
-/** Probabilidad de que un usuario quiera un plato dado su perfil latente. */
+/** Probability that a user wants a dish given their latent profile. */
 export function dishProb(
   dish: number,
   cuisine: Cuisine,
@@ -136,7 +136,7 @@ function sampleBernoulli(prob: number, rng: () => number): 0 | 1 {
   return rng() < prob ? 1 : 0;
 }
 
-/** Genera las preferencias de un usuario dado su perfil latente (cocina × picante). */
+/** Generates the preferences of a user given their latent profile (cuisine × spicy). */
 export function generateUser(
   profile: UserProfile,
   noise: number,
@@ -153,11 +153,11 @@ export function generateUser(
 }
 
 /**
- * Genera un dataset binario sintético compositivo (cocina × picante).
+ * Generates a synthetic compositional binary dataset (cuisine × spicy).
  *
- * Para cada cocina se generan `usersPerCuisine` usuarios; cada uno es amante del
- * picante con probabilidad `spicyProb`, de forma INDEPENDIENTE de su cocina.
- * Esto hace del picante un factor latente transversal genuino.
+ * For each cuisine, `usersPerCuisine` users are generated; each one is a spicy
+ * lover with probability `spicyProb`, INDEPENDENTLY of their cuisine.
+ * This makes spicy a genuinely cross-cutting latent factor.
  */
 export function generateDataset(config: DatasetConfig): Dataset {
   const rng = config.seed !== undefined ? mulberry32(config.seed) : Math.random;
@@ -177,7 +177,7 @@ export function generateDataset(config: DatasetConfig): Dataset {
     }
   }
 
-  // Fisher-Yates shuffle con el mismo rng.
+  // Fisher-Yates shuffle using the same rng.
   for (let i = data.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [data[i], data[j]] = [data[j]!, data[i]!];

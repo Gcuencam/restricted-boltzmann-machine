@@ -4,17 +4,17 @@ import { loadModel } from "./model/persistence.js";
 import { loadNewUsers, loadTrainDataset } from "./data/loader.js";
 import { DISHES, N_DISHES, DISH_SPICY, CUISINES } from "./data/dataset.js";
 
-/** Color por intensidad de activación: verde ≥0.9, amarillo ≥0.75, naranja ≥0.5. */
+/** Color by activation intensity: green ≥0.9, yellow ≥0.75, orange ≥0.5. */
 const colorByActivation = (a: number, text: string): string =>
   a >= 0.9 ? chalk.green(text)
   : a >= 0.75 ? chalk.yellow(text)
-  : chalk.hex("#FFA500")(text); // naranja (0.5 ≤ a < 0.75)
+  : chalk.hex("#FFA500")(text); // orange (0.5 ≤ a < 0.75)
 
 const nHidden = parseInt(process.argv[2] ?? "6", 10);
 const rbm = loadModel(`data/model-${nHidden}.json`);
 const users = loadNewUsers();
 
-// ── 1. Matriz de pesos W ──────────────────────────────────────────────────────
+// ── 1. Weight matrix W ───────────────────────────────────────────────────────
 
 const W = await rbm.W.array() as number[][];
 
@@ -25,8 +25,8 @@ const hiddenHeaders = Array.from({ length: rbm.nHidden }, (_, h) => `Hidden ${h 
 console.log("\nThe network learned the following weights:\n");
 console.log(" ".repeat(28) + hiddenHeaders + "   picante?");
 for (let d = 0; d < N_DISHES; d++) {
-  // Coloreamos en verde las asociaciones fuertes (peso ≥ 1). El padding se aplica
-  // ANTES del color para que los códigos ANSI no descuadren las columnas.
+  // Color strong associations (weight ≥ 1) in green. Padding is applied
+  // BEFORE the color so ANSI codes do not misalign the columns.
   const row = W[d]!.map(v => {
     const cell = fmt(v).padStart(COL);
     return v >= 1 ? chalk.green(cell) : cell;
@@ -34,9 +34,9 @@ for (let d = 0; d < N_DISHES; d++) {
   console.log(DISHES[d]!.padEnd(28) + row + (DISH_SPICY[d] ? "      🌶️" : ""));
 }
 
-// ── 1b. ¿Qué unidad oculta codifica el "picante"? ─────────────────────────────
-// Para cada unidad medimos cuánto más pesa sobre los platos picantes que sobre
-// los no picantes. La que maximiza esa diferencia es la candidata a factor picante.
+// ── 1b. Which hidden unit encodes "spicy"? ────────────────────────────────────
+// For each unit we measure how much more it weights spicy dishes than non-spicy
+// ones. The one that maximises that difference is the spicy factor candidate.
 
 const spicyScore = Array.from({ length: rbm.nHidden }, (_, h) => {
   let sumSpicy = 0, nSpicy = 0, sumMild = 0, nMild = 0;
@@ -52,11 +52,11 @@ console.log(
   `(peso picante − no picante = ${spicyScore[spicyUnit]!.toFixed(3)})`
 );
 
-// ── 1c. Mapa unidad → cocina (descubierto sobre el train set) ──────────────────
-// El picante es UN eje; la cocina es OTRO eje ortogonal. Para que la columna
-// "Factor" signifique la cocina del comensal, buscamos su unidad dominante entre
-// las NO picantes. La etiqueta de cada unidad (qué cocina representa) se descubre
-// por mayoría: a qué unidad envía cada cocina la mayor parte de sus usuarios.
+// ── 1c. Unit → cuisine map (discovered on the train set) ──────────────────────
+// Spicy is ONE axis; cuisine is ANOTHER orthogonal axis. For the "Factor" column
+// to mean the diner's cuisine, we look for their dominant unit among the NON-spicy
+// ones. The label of each unit (which cuisine it represents) is discovered by
+// majority vote: which unit receives the most users from each cuisine.
 
 const cuisineUnits = Array.from({ length: nHidden }, (_, h) => h).filter(h => h !== spicyUnit);
 
@@ -86,7 +86,7 @@ console.log(
 );
 
 
-// ── 2. Preferencias de usuarios (platos × usuarios) ───────────────────────────
+// ── 2. User preferences (dishes × users) ─────────────────────────────────────
 
 const NAME_COL = 8;
 const nameHeaders = users.map(u => u.name.padStart(NAME_COL)).join(" ");
@@ -97,7 +97,7 @@ for (let d = 0; d < N_DISHES; d++) {
   console.log(DISHES[d]!.padEnd(30) + row + (DISH_SPICY[d] ? "  🌶️" : ""));
 }
 
-// ── 3. Activación oculta ──────────────────────────────────────────────────────
+// ── 3. Hidden activation ──────────────────────────────────────────────────────
 
 const ACT_COL = 10;
 const hHeaders = Array.from({ length: nHidden }, (_, h) =>
@@ -111,10 +111,10 @@ console.log(`  ${"Usuario".padEnd(10)}  ${"Cocina".padEnd(10)}  ${"picante".padE
 const vUsers = tf.tensor2d(users.map(u => u.preferences)) as tf.Tensor2D;
 const pH = await rbm.probHgivenV(vUsers).array() as number[][];
 
-// Última columna: TODAS las unidades activas (P > 0.5) de cada comensal, ordenadas
-// de mayor a menor y coloreadas por intensidad (verde ≥0.9, amarillo ≥0.75, naranja
-// ≥0.5). Revela que un comensal expresa varios factores a la vez — p.ej. los
-// picantes encienden su cocina Y la unidad del picante (H6).
+// Last column: ALL active units (P > 0.5) for each diner, sorted from highest to
+// lowest and colored by intensity (green ≥0.9, yellow ≥0.75, orange ≥0.5).
+// Reveals that a diner expresses several factors at once — e.g. spicy diners
+// activate their cuisine unit AND the spicy unit (H6).
 for (let i = 0; i < users.length; i++) {
   const user = users[i]!;
   const acts = pH[i]!;

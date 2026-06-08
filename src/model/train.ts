@@ -6,42 +6,42 @@ export interface TrainConfig {
   epochs: number;
   learningRate: number;
   /**
-   * Semilla para el barajado de los mini-batches. Fijarla hace el entrenamiento
-   * reproducible epoch a epoch (importante para un experimento publicable).
+   * Seed for mini-batch shuffling. Fixing it makes training reproducible epoch
+   * to epoch (important for a publishable experiment).
    */
   seed?: number;
   /**
    * Mini-batch size for stochastic gradient descent.
    *
-   * - undefined (default): usa el dataset completo cada epoch (batch GD).
-   *   Gradientes estables pero la RBM puede quedarse atascada en mínimos locales.
+   * - undefined (default): uses the full dataset each epoch (batch GD).
+   *   Stable gradients but the RBM may get stuck in local minima.
    *
-   * - número (ej. 32): divide el dataset en mini-batches aleatorios cada epoch.
-   *   Introduce ruido en el gradiente que ayuda a escapar mínimos locales y
-   *   suele acelerar la convergencia. A cambio, el entrenamiento es más irregular.
+   * - number (e.g. 32): splits the dataset into random mini-batches each epoch.
+   *   Introduces gradient noise that helps escape local minima and usually speeds
+   *   up convergence. In return, training is more irregular.
    *
-   * Valores típicos: 16–64. Con datasets pequeños (<500 usuarios) probar con 16 o 32.
+   * Typical values: 16–64. With small datasets (<500 users) try 16 or 32.
    */
   batchSize?: number;
   /**
-   * Weight decay L2: penaliza pesos grandes (W += lr·(ΔW − weightDecay·W)).
-   * Mantiene los filtros pequeños y limpios y evita que unas pocas conexiones
-   * dominen. Valores típicos: 1e-4 – 1e-3.
+   * L2 weight decay: penalises large weights (W += lr·(ΔW − weightDecay·W)).
+   * Keeps filters small and clean and prevents a few connections from dominating.
+   * Typical values: 1e-4 – 1e-3.
    */
   weightDecay?: number;
   /**
-   * Weight decay aplicado a los BIAS ocultos bh. A diferencia del weight decay
-   * normal (que solo toca W), este frena el crecimiento de los bias que crean
-   * unidades "encendidas por defecto" (bias alto → saturación). Útil para que
-   * cada unidad refleje su evidencia de pesos y no un baseline arbitrario.
+   * Weight decay applied to the HIDDEN BIASES bh. Unlike normal weight decay
+   * (which only touches W), this slows the growth of biases that create "always-on"
+   * units (high bias → saturation). Useful so that each unit reflects its weight
+   * evidence rather than an arbitrary baseline.
    */
   hiddenBiasDecay?: number;
   /**
-   * Penalización de dispersión (sparsity). Empuja la activación media de cada
-   * unidad oculta hacia `target` con fuerza `cost`. Al forzar que cada unidad se
-   * encienda para POCOS usuarios, deja de haber unidades "encendidas por defecto"
-   * (bias alto) y cada una tiende a especializarse en un factor — aquí, una cocina.
-   * Valores típicos: target 0.05–0.2, cost 0.1–1.0. (Hinton 2010, §10.)
+   * Sparsity penalty. Pushes the mean activation of each hidden unit towards
+   * `target` with strength `cost`. By forcing each unit to fire for FEW users,
+   * there are no "always-on" units (high bias) and each one tends to specialise
+   * in a factor — here, a cuisine. Typical values: target 0.05–0.2, cost 0.1–1.0.
+   * (Hinton 2010, §10.)
    */
   sparsity?: { target: number; cost: number };
 }
@@ -57,19 +57,19 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
   const effectiveBatchSize = config.batchSize ?? nSamples;
   const vAll = tf.tensor2d(data) as tf.Tensor2D;
 
-  // RNG sembrado para que el barajado sea idéntico en cada corrida.
+  // Seeded RNG so the shuffle is identical on every run.
   const rng = config.seed !== undefined ? mulberry32(config.seed) : Math.random;
 
   for (let epoch = 0; epoch < config.epochs; epoch++) {
-    // Mezclamos los índices cada epoch para que los mini-batches vean
-    // combinaciones distintas y el modelo no memorice el orden de los datos.
+    // Shuffle indices every epoch so mini-batches see different combinations
+    // and the model does not memorise the data order.
     const indices = Array.from({ length: nSamples }, (_, i) => i);
     for (let i = nSamples - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [indices[i], indices[j]] = [indices[j]!, indices[i]!];
     }
 
-    // Una pasada por todos los mini-batches del epoch
+    // One pass over all mini-batches in the epoch
     for (let start = 0; start < nSamples; start += effectiveBatchSize) {
       const batchData = indices
         .slice(start, start + effectiveBatchSize)
@@ -79,14 +79,14 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
         const vBatch = tf.tensor2d(batchData) as tf.Tensor2D;
         const { dW, dbv, dbh } = rbm.cd1(vBatch);
 
-        // Weight decay L2: resta una fracción del propio W al gradiente.
+        // L2 weight decay: subtract a fraction of W itself from the gradient.
         const dWreg = config.weightDecay
           ? dW.sub(rbm.W.mul(config.weightDecay))
           : dW;
 
-        // Sparsity: empuja la activación media de cada unidad hacia el target.
-        // q = media por unidad de P(h=1 | vBatch); el gradiente (target − q)
-        // baja el bias de las unidades que se activan de más.
+        // Sparsity: push the mean activation of each unit towards the target.
+        // q = per-unit mean of P(h=1 | vBatch); the gradient (target − q)
+        // lowers the bias of units that fire too often.
         let dbhReg = dbh;
         if (config.sparsity) {
           const q = rbm.probHgivenV(vBatch).mean(0) as tf.Tensor1D;
@@ -103,10 +103,9 @@ export function train(rbm: RBM, data: number[][], config: TrainConfig): number[]
       });
     }
 
-    // El error se calcula siempre sobre el dataset COMPLETO para que la métrica
-    // sea comparable entre epochs independientemente del tamaño de batch.
-    // Usamos las probabilidades (mean-field, sin muestreo) para que la curva sea
-    // suave y reproducible en lugar de ruidosa.
+    // Error is always computed over the FULL dataset so the metric is comparable
+    // across epochs regardless of batch size. We use probabilities (mean-field,
+    // no sampling) so the curve is smooth and reproducible rather than noisy.
     const error = tf.tidy(() => {
       const ph0 = rbm.probHgivenV(vAll);
       const pv1 = rbm.probVgivenH(ph0);

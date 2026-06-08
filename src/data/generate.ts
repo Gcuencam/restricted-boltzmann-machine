@@ -8,7 +8,7 @@ import {
   mulberry32,
 } from "./dataset.js";
 
-// ── Train dataset: 4 cocinas × 60 usuarios ───────────────────────────────────
+// ── Train dataset: 4 cuisines × 60 users ─────────────────────────────────────
 
 const train = generateDataset({
   usersPerCuisine: 60,
@@ -29,9 +29,9 @@ console.log(
   `✓ data/train.json — ${trainRecords.length} usuarios (${nSpicy} picantes, ${trainRecords.length - nSpicy} no)`
 );
 
-// ── New users: pares emparejados (misma cocina, distinto picante) ─────────────
-// El momento clave del artículo: dos comensales de la MISMA cocina a los que solo
-// la unidad latente del picante separa.
+// ── New users: matched pairs (same cuisine, different spicy preference) ────────
+// The key moment of the article: two diners from the SAME cuisine separated only
+// by the spicy latent unit.
 
 const NEW_USERS: { name: string; cuisine: Cuisine; spicy: boolean }[] = [
   { name: "Arancha", cuisine: "mexicano", spicy: false },

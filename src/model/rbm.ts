@@ -20,9 +20,8 @@ export class RBM {
   bv: tf.Variable<tf.Rank.R1>;
   bh: tf.Variable<tf.Rank.R1>;
 
-  // Semilla incremental para el muestreo Bernoulli. Hace el entrenamiento
-  // totalmente determinista (mismos pesos en cada corrida) en lugar de depender
-  // del PRNG global de TensorFlow.
+  // Incremental seed for Bernoulli sampling. Makes training fully deterministic
+  // (same weights on every run) instead of depending on TensorFlow's global PRNG.
   private sampleSeed: number;
   private sampleCount = 0;
 
@@ -90,11 +89,11 @@ export class RBM {
    * Δbv  = mean(v⁰ − pv1,  axis=0)
    * Δbh  = mean(ph0 − ph1, axis=0)
    *
-   * Se muestrea SOLO la capa oculta (h0): actúa de cuello de botella binario que
-   * obliga a la red a comprimir. Para la reconstrucción visible se usan las
-   * probabilidades (pv1) en lugar de un muestreo, lo que reduce el ruido del
-   * gradiente y produce filtros más nítidos — práctica recomendada por Hinton
-   * (A Practical Guide to Training RBMs, 2010, §3).
+   * Only the hidden layer is sampled (h0): it acts as a binary bottleneck that
+   * forces the network to compress. Visible reconstruction uses probabilities
+   * (pv1) instead of sampling, which reduces gradient noise and produces sharper
+   * filters — recommended practice from Hinton (A Practical Guide to Training
+   * RBMs, 2010, §3).
    */
   cd1(v0: tf.Tensor2D): { dW: tf.Tensor2D; dbv: tf.Tensor1D; dbh: tf.Tensor1D } {
     return tf.tidy(() => {
