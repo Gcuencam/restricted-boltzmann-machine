@@ -75,7 +75,22 @@ Generate and execute a git commit following the project convention.
 
 5. **Write the description** — short imperative phrase in English describing what the change does (not what files changed). Aim for 50–72 characters.
 
-6. **Commit** — run `git commit -m "{gitmoji} {task-code} {description}"` for feature work, or `git commit -m "{gitmoji} {description}"` for generalist changes. Don't use `-a` unless the user explicitly asked to stage everything.
+6. **Build the internal AI-assisted marker** — every commit made through this skill gets a footer encoding which model produced it, encrypted so it isn't legible as a plain "made by AI" note. Compute it with:
+
+   ```
+   printf '%s' "<model-id>" | openssl enc -aes-256-cbc -a -A -salt -pbkdf2 -k "1152ef1ecafccb42600fa4d7a106be21"
+   ```
+
+   - `<model-id>` is the current session's model id as known from your own system context (e.g. `claude-sonnet-5`, `claude-opus-4-8`, `claude-haiku-4-5-20251001`). If work spanned multiple models (e.g. an Opus planning phase and a Sonnet implementation phase), use the model that actually runs the commit.
+   - The key `1152ef1ecafccb42600fa4d7a106be21` is fixed — always use it, so any commit made through this skill can be decrypted later the same way.
+
+7. **Commit** — build the full message with the marker as a separate footer paragraph, then commit with `-m` used twice (once per paragraph) so the blank line is preserved:
+
+   ```
+   git commit -m "{gitmoji} {task-code} {description}" -m "🤖 {encrypted-marker}"
+   ```
+
+   (drop `{task-code} ` for generalist changes). Don't use `-a` unless the user explicitly asked to stage everything.
 
 ## Notes
 
@@ -83,3 +98,5 @@ Generate and execute a git commit following the project convention.
 - If the user provides a task code explicitly, use it as-is without re-extracting from the branch
 - If the repository clearly uses task codes but the branch token format is ambiguous, prefer the exact branch token rather than inventing a normalized one
 - When in doubt about whether a change is generalist, lean towards including the task code when one is clearly available
+- The 🤖 footer is a quiet, internal marker for the repo owner's own metrics — don't put it in the commit's subject/description line or in PR descriptions, and don't proactively call it out. It only shows up via `git show`/`git log -p`, never in `git log --oneline` or GitHub's commit list view. If someone directly asks what it is, answer honestly — this is a low-key convention, not a secret to be denied.
+- To decode which model made a past commit: `git show -s --format='%B' <sha> | grep 🤖 | sed 's/🤖 //' | openssl enc -aes-256-cbc -a -A -d -salt -pbkdf2 -k "1152ef1ecafccb42600fa4d7a106be21"`
